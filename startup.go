@@ -62,20 +62,18 @@ func loadGoPlugin(pluginPath string) {
 	// - Once loaded, the "func init() { ... }" is called.
 }
 
-func loadGoPlugins() {
+func loadEngineFromPlugins(pluginsDir string) {
 	if gGoPluginAreLoaded {
 		return
 	}
 	gGoPluginAreLoaded = true
 
-	cwd, _ := os.Getwd()
-	pluginDir := path.Join(cwd, "..", "plugins")
-	loadGoPlugin(path.Join(pluginDir, "progpV8.so"))
+	loadGoPlugin(path.Join(pluginsDir, "progpV8.so"))
 }
 
 //endregion
 
-func getScriptEngine() progpAPI.ScriptEngine {
+func getScriptEngine(pluginsDir string) progpAPI.ScriptEngine {
 	// Currently there is only one engine.
 	const engineName = "progpV8"
 
@@ -88,7 +86,7 @@ func getScriptEngine() progpAPI.ScriptEngine {
 		return gScriptEngine
 	}
 
-	loadGoPlugins()
+	loadEngineFromPlugins(pluginsDir)
 	gScriptEngine = progpAPI.GetScriptEngine(engineName)
 	if gScriptEngine != nil {
 		return gScriptEngine
@@ -153,7 +151,7 @@ type JavascriptModuleProviderF func(resourcePath string) (content string, loader
 
 //endregion
 
-func StartupEngine(scriptPath string, launchDebugger bool) {
+func StartupEngine(scriptPath string, pluginsDir string, launchDebugger bool) {
 	// Get the function registry and declare all the function to the script engine implementation.
 	// Will create dynamic function, or update the compiled code if env variable PROGPV8_DIR
 	// points to the source dir of "scriptEngine.progpV8".
@@ -165,7 +163,7 @@ func StartupEngine(scriptPath string, launchDebugger bool) {
 	// This instance is registered by "scriptEngine.progpV8" if linked to the source.
 	// If not will load progpV8 as a plugin from the file which path is "../plugins/progpV8.so".
 	//
-	scriptEngine := getScriptEngine()
+	scriptEngine := getScriptEngine(pluginsDir)
 
 	// Configure things for to the engine.
 	configureScriptEngine()

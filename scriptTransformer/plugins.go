@@ -85,13 +85,13 @@ func pluginResolveMissingDependency() api.Plugin {
 				// Allows flagging explicitly embedded files
 				`^embedded:`,
 
-				// Allows replacing by our own version
+				// Will allows replacing by our own version
 				`^react$`,
 
 				// Node.js namespace
 				`^node:`,
 				// Node.js special packages
-				`^assert$`, `^path$`, `^fs$`, `^os$`, `^process$`,
+				`^assert$`, `^path$`, `^fs$`, `^os$`, `^process$`, `^stream$`, `^test$`,
 			}
 
 			for _, filter := range filters {
@@ -121,10 +121,14 @@ func pluginResolveMissingDependency() api.Plugin {
 			}
 
 			// Takes content from Go embedded file.
+			// Allows catching things like 		import "progp:core".
+			// and								import "embedded:myscript".
+			//
 			build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "progp"}, onLoad)
 			build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "embedded"}, onLoad)
 
 			// For Node.js compatibility.
+			// Allows catching things like 		import "node:path".
 			build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "node"}, onLoad)
 
 			//endregion
