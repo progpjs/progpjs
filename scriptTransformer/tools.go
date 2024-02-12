@@ -67,7 +67,9 @@ func GetCompileCacheDir(searchFrom string) string {
 func SearchModuleInNodeModules(modName string, callerDir string) string {
 	var foundPath string
 
-	WalkNodeModules(callerDir, func(nodeModulesDir string) bool {
+	// Here add sub_dir in order to match the case where the caller dir is node_modules.
+	//
+	WalkNodeModules(path.Join(callerDir, "/sub_dir"), func(nodeModulesDir string) bool {
 		basePath := path.Join(nodeModulesDir, modName)
 		found := searchFileFromBase(basePath)
 

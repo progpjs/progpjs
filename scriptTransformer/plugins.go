@@ -90,6 +90,7 @@ func pluginResolveMissingDependency() api.Plugin {
 
 				// Node.js namespace
 				`^node:`,
+
 				// Node.js special packages
 				`^assert$`, `^path$`, `^fs$`, `^os$`, `^process$`, `^stream$`, `^test$`,
 			}
