@@ -56,7 +56,11 @@ func GetCompileCacheDir(searchFrom string) string {
 		nmd = path.Join(searchFrom, "node_modules")
 	}
 
-	dirPath := path.Join(nmd, ".progp", "esbuildCache")
+	// Warning: don't store on node_modules since Chrome Inspector automatically
+	// exclude debugging file inside this directory.
+	//
+	dirPath := path.Join(path.Dir(nmd), ".progpCache", "esbuildCache")
+
 	_ = os.MkdirAll(dirPath, os.ModePerm)
 
 	return dirPath
