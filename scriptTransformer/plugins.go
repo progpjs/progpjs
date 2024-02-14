@@ -93,6 +93,7 @@ func pluginResolveMissingDependency() api.Plugin {
 
 				// Node.js special packages
 				`^assert$`, `^path$`, `^fs$`, `^os$`, `^process$`, `^stream$`, `^test$`,
+				`^buffer$`, `^url$`, `^timers$`,
 			}
 
 			for _, filter := range filters {
