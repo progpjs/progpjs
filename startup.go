@@ -145,13 +145,21 @@ const (
 
 //region Config items
 
+type EngineOptions struct {
+	PluginsDir               string
+	LaunchDebugger           bool
+	OnScriptCompilationError func(scriptPath string, err error) bool
+	OnRuntimeError           progpAPI.RuntimeErrorHandlerF
+	OnScriptTerminated       progpAPI.ScriptTerminatedHandlerF
+}
+
 var gJavascriptModuleProviders = make(map[string]JavascriptModuleProviderF)
 
 type JavascriptModuleProviderF func(resourcePath string) (content string, loader JsResourceLoader)
 
 //endregion
 
-func StartupEngine(scriptPath string, pluginsDir string, launchDebugger bool) {
+func StartupEngine(scriptPath string, options EngineOptions) {
 	// Get the function registry and declare all the function to the script engine implementation.
 	// Will create dynamic function, or update the compiled code if env variable PROGPV8_DIR
 	// points to the source dir of "scriptEngine.progpV8".
@@ -163,7 +171,7 @@ func StartupEngine(scriptPath string, pluginsDir string, launchDebugger bool) {
 	// This instance is registered by "scriptEngine.progpV8" if linked to the source.
 	// If not will load progpV8 as a plugin from the file which path is "../plugins/progpV8.so".
 	//
-	scriptEngine := getScriptEngine(pluginsDir)
+	scriptEngine := getScriptEngine(options.PluginsDir)
 
 	// Configure things for to the engine.
 	configureScriptEngine()
@@ -171,22 +179,38 @@ func StartupEngine(scriptPath string, pluginsDir string, launchDebugger bool) {
 	// Transform typescript file (and others supported types) as plain javascript.
 	// It big a big file with all the requirements.
 	//
-	scriptContent, scriptOrigin, isOk := scriptTransformer.CompileJavascriptFile(scriptPath)
+	scriptContent, scriptOrigin, err := scriptTransformer.CompileJavascriptFile(scriptPath)
 
 	// If ko, the error message has already been displayed.
 	// Then we only have to exit.
 	//
-	if !isOk {
+	if err != nil {
+		if options.OnScriptCompilationError != nil {
+			if options.OnScriptCompilationError(scriptPath, err) {
+				return
+			}
+		}
+
 		os.Exit(1)
 	}
 
+	// Allows the engine to initialize himself.
 	scriptEngine.Start()
 
-	if launchDebugger {
+	// If the debugger is requested then a wait message is printed
+	// and only once connected our script is executed.
+	//
+	if options.LaunchDebugger {
 		scriptEngine.WaitDebuggerReady()
 	}
 
-	progpAPI.ExecuteScriptContent(scriptContent, scriptOrigin, scriptEngine)
+	if options.OnRuntimeError != nil {
+		scriptEngine.SetRuntimeErrorHandler(options.OnRuntimeError)
+	}
+
+	scriptEngine.SetScriptTerminatedHandler(options.OnScriptTerminated)
+
+	progpAPI.ExecuteScriptContent(scriptContent, scriptOrigin, scriptPath, scriptEngine)
 
 	// Allows closing resources correctly and
 	// avoid some errors which can occurs before exiting.

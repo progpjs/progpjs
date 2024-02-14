@@ -11,25 +11,33 @@ import (
 
 var gAllowsScriptExtensions = []string{".js", ".ts", ".tsx"}
 
-func CompileJavascriptFile(scriptPath string) (string, string, bool) {
+type ScriptCompilationError struct {
+	message string
+}
+
+func (m *ScriptCompilationError) Error() string {
+	return m.message
+}
+
+func CompileJavascriptFile(scriptPath string) (string, string, error) {
 	fileExt := path.Ext(scriptPath)
 
 	if slices.Contains(gAllowsScriptExtensions, fileExt) {
 		scriptPrefix := "import '@progp/core'"
 
-		compileResult, isOk := bundleJavascriptScriptEntryPoint(scriptPath, scriptPrefix, true)
-		if !isOk {
-			return "", "", false
+		compileResult, err := bundleJavascriptScriptEntryPoint(scriptPath, scriptPrefix, true)
+		if err != nil {
+			return "", "", err
 		}
 
-		return compileResult.CompiledScriptContent, compileResult.CompiledScriptPath, true
+		return compileResult.CompiledScriptContent, compileResult.CompiledScriptPath, nil
 	}
 
 	_, _ = fmt.Fprintf(os.Stdout, "unsupported script type: %s", fileExt)
-	return "", "", false
+	return "", "", nil
 }
 
-func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix string, forceRebuild bool) (*TransformedScript, bool) {
+func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix string, forceRebuild bool) (*TransformedScript, error) {
 	outputDir := path.Join(GetCompileCacheDir(path.Dir(scriptSourcePath)), calcMd5(scriptSourcePath))
 
 	compiledScriptBasePath := path.Join(outputDir, "stdin")
@@ -58,7 +66,7 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 			CompiledScriptContent: jsContent,
 			SourceMapScriptPath:   mapPath,
 			SourceMapFileContent:  mapContent,
-		}, true
+		}, nil
 	}
 
 	baseDir, entryPoint := path.Split(scriptSourcePath)
@@ -141,7 +149,7 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 	result := api.Build(buildOptions)
 
 	if len(result.Errors) > 0 {
-		println(">>> Errors when compiling " + path.Join(baseDir, entryPoint))
+		errMsg := ""
 
 		for _, err := range result.Errors {
 			messages := []api.Message{
@@ -166,10 +174,11 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 				TerminalWidth: 160,
 			})
 
-			fmt.Printf("%s", strings.Join(formatted, "\n"))
+			errMsg += strings.Join(formatted, "\n")
+			//fmt.Printf("%s", strings.Join(formatted, "\n"))
 		}
 
-		return nil, false
+		return nil, &ScriptCompilationError{message: errMsg}
 	}
 
 	callResult := TransformedScript{}
@@ -187,5 +196,5 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 		}
 	}
 
-	return &callResult, true
+	return &callResult, nil
 }
