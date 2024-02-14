@@ -73,9 +73,10 @@ func loadEngineFromPlugins(pluginsDir string) {
 
 //endregion
 
-func getScriptEngine(pluginsDir string) progpAPI.ScriptEngine {
-	// Currently there is only one engine.
-	const engineName = "progpV8"
+func resolveScriptEngine(engineName string, pluginsDir string) progpAPI.ScriptEngine {
+	if engineName == "" {
+		engineName = "progpV8"
+	}
 
 	if gScriptEngine != nil {
 		return gScriptEngine
@@ -146,6 +147,9 @@ const (
 //region Config items
 
 type EngineOptions struct {
+	IsolateData              any
+	SecurityGroup            string
+	ScriptEngineName         string
 	PluginsDir               string
 	LaunchDebugger           bool
 	OnScriptCompilationError func(scriptPath string, err error) bool
@@ -159,23 +163,15 @@ type JavascriptModuleProviderF func(resourcePath string) (content string, loader
 
 //endregion
 
-func StartupEngine(scriptPath string, options EngineOptions) {
-	// Get the function registry and declare all the function to the script engine implementation.
-	// Will create dynamic function, or update the compiled code if env variable PROGPV8_DIR
-	// points to the source dir of "scriptEngine.progpV8".
-	//
-	exportExposedFunctions()
+var gIsBootstrapped = false
+var gEngineOptions EngineOptions
+var gDefaultScriptEngine progpAPI.ScriptEngine
 
-	// Get instance of the engine or panic if not found.
-	//
-	// This instance is registered by "scriptEngine.progpV8" if linked to the source.
-	// If not will load progpV8 as a plugin from the file which path is "../plugins/progpV8.so".
-	//
-	scriptEngine := getScriptEngine(options.PluginsDir)
+func GetScriptEngine() progpAPI.ScriptEngine {
+	return gDefaultScriptEngine
+}
 
-	// Configure things for to the engine.
-	configureScriptEngine()
-
+func executeScript(iso progpAPI.ScriptIsolate, scriptPath string) *progpAPI.ScriptErrorMessage {
 	// Transform typescript file (and others supported types) as plain javascript.
 	// It big a big file with all the requirements.
 	//
@@ -185,24 +181,45 @@ func StartupEngine(scriptPath string, options EngineOptions) {
 	// Then we only have to exit.
 	//
 	if err != nil {
-		if options.OnScriptCompilationError != nil {
-			if options.OnScriptCompilationError(scriptPath, err) {
-				return
+		if gEngineOptions.OnScriptCompilationError != nil {
+			if gEngineOptions.OnScriptCompilationError(scriptPath, err) {
+				return nil
 			}
 		}
 
 		os.Exit(1)
 	}
 
-	// Allows the engine to initialize himself.
-	scriptEngine.Start()
+	return iso.ExecuteScript(scriptContent, scriptOrigin, scriptPath)
+}
 
-	// If the debugger is requested then a wait message is printed
-	// and only once connected our script is executed.
-	//
-	if options.LaunchDebugger {
-		scriptEngine.WaitDebuggerReady()
+// Bootstrap initialize the engine and execute a startup script.
+// If the script path is blank, then no script is executed.
+// In all case the engine is initialized.
+func Bootstrap(startupScript string, options EngineOptions) {
+	if gIsBootstrapped {
+		return
 	}
+	gIsBootstrapped = true
+
+	gEngineOptions = options
+
+	// Get the function registry and declare all the function to the script engine implementation.
+	// Will create dynamic function, or update the compiled code if env variable PROGPV8_DIR
+	// points to the source dir of "scriptEngine.progpV8".
+	//
+	exportExposedFunctions()
+
+	// Configure things for the core functionalities.
+	configureCore()
+
+	// Get instance of the engine or panic if not found.
+	//
+	// This instance is registered by "scriptEngine.progpV8" if linked to the source.
+	// If not will load progpV8 as a plugin from the file which path is "../plugins/progpV8.so".
+	//
+	scriptEngine := resolveScriptEngine(options.ScriptEngineName, options.PluginsDir)
+	gDefaultScriptEngine = scriptEngine
 
 	if options.OnRuntimeError != nil {
 		scriptEngine.SetRuntimeErrorHandler(options.OnRuntimeError)
@@ -210,7 +227,30 @@ func StartupEngine(scriptPath string, options EngineOptions) {
 
 	scriptEngine.SetScriptTerminatedHandler(options.OnScriptTerminated)
 
-	progpAPI.ExecuteScriptContent(scriptContent, scriptOrigin, scriptPath, scriptEngine)
+	// Allows the engine to initialize himself.
+	scriptEngine.Start()
+
+	progpAPI.SetScriptFileExecutor(executeScript)
+
+	// If the debugger is requested then a wait message is printed
+	// and only once connected our script is executed.
+	//
+	if gEngineOptions.LaunchDebugger {
+		gDefaultScriptEngine.WaitDebuggerReady()
+	}
+
+	if startupScript != "" {
+		scriptErr := executeScript(scriptEngine.CreateNewIsolate(options.SecurityGroup, options.IsolateData), startupScript)
+
+		// We manage error only when it's the startup script.
+		//
+		if scriptErr != nil {
+			// If no error the script exit but the VM must continue to execute
+			// if a background task is executing. If error, then stop all.
+			//
+			progpAPI.EndAllBackgroundTasks()
+		}
+	}
 
 	// Allows closing resources correctly and
 	// avoid some errors which can occurs before exiting.
@@ -236,7 +276,7 @@ func exportExposedFunctions() {
 	}
 }
 
-func configureScriptEngine() {
+func configureCore() {
 	// Will allows to translate error message from plain javascript to typescript.
 	// This by using a sourcemap to decode.
 	//
