@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package libProgpScripts
+package progpScripts
 
 func AddJavascriptModuleProvider(modName string, provider JavascriptModuleProviderF) {
 	gJavascriptModuleProviders[modName] = provider

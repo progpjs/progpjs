@@ -1,4 +1,4 @@
-module github.com/progpjs/libProgpScripts
+module github.com/progpjs/progpScripts
 
 go 1.21
 

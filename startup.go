@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package libProgpScripts
+package progpScripts
 
 import (
 	"github.com/go-sourcemap/sourcemap"
-	"github.com/progpjs/libProgpScripts/scriptTransformer"
 	"github.com/progpjs/progpAPI"
 	"github.com/progpjs/progpAPI/codegen"
+	"github.com/progpjs/progpScripts/scriptTransformer"
 	"os"
 	"path"
 	"plugin"

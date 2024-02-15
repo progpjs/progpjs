@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package libProgpScripts
+package progpScripts
 
 import (
 	"embed"
