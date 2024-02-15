@@ -147,14 +147,15 @@ const (
 //region Config items
 
 type EngineOptions struct {
-	IsolateData              any
-	SecurityGroup            string
-	ScriptEngineName         string
-	PluginsDir               string
-	LaunchDebugger           bool
-	OnScriptCompilationError func(scriptPath string, err error) bool
-	OnRuntimeError           progpAPI.RuntimeErrorHandlerF
-	OnScriptTerminated       progpAPI.ScriptTerminatedHandlerF
+	IsolateData               any
+	SecurityGroup             string
+	ScriptEngineName          string
+	PluginsDir                string
+	LaunchDebugger            bool
+	OnScriptCompilationError  func(scriptPath string, err error) bool
+	OnRuntimeError            progpAPI.RuntimeErrorHandlerF
+	OnScriptTerminated        progpAPI.ScriptTerminatedHandlerF
+	OnCheckingAllowedFunction progpAPI.CheckAllowedFunctionsF
 }
 
 var gJavascriptModuleProviders = make(map[string]JavascriptModuleProviderF)
@@ -226,6 +227,7 @@ func Bootstrap(startupScript string, options EngineOptions) {
 	}
 
 	scriptEngine.SetScriptTerminatedHandler(options.OnScriptTerminated)
+	scriptEngine.SetAllowedFunctionsChecker(options.OnCheckingAllowedFunction)
 
 	// Allows the engine to initialize himself.
 	scriptEngine.Start()
