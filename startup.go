@@ -250,7 +250,7 @@ func Bootstrap(startupScript string, options EngineOptions) {
 			// If no error the script exit but the VM must continue to execute
 			// if a background task is executing. If error, then stop all.
 			//
-			progpAPI.EndAllBackgroundTasks()
+			progpAPI.ForceExitingVM()
 		}
 	}
 
