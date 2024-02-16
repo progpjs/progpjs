@@ -147,7 +147,6 @@ const (
 //region Config items
 
 type EngineOptions struct {
-	IsolateData               any
 	SecurityGroup             string
 	ScriptEngineName          string
 	PluginsDir                string
@@ -172,7 +171,7 @@ func GetScriptEngine() progpAPI.ScriptEngine {
 	return gDefaultScriptEngine
 }
 
-func executeScript(iso progpAPI.ScriptIsolate, scriptPath string) *progpAPI.ScriptErrorMessage {
+func executeScript(ctx progpAPI.ScriptContext, scriptPath string) *progpAPI.ScriptErrorMessage {
 	// Transform typescript file (and others supported types) as plain javascript.
 	// It big a big file with all the requirements.
 	//
@@ -191,7 +190,7 @@ func executeScript(iso progpAPI.ScriptIsolate, scriptPath string) *progpAPI.Scri
 		os.Exit(1)
 	}
 
-	return iso.ExecuteScript(scriptContent, scriptOrigin, scriptPath)
+	return ctx.ExecuteScript(scriptContent, scriptOrigin, scriptPath)
 }
 
 // Bootstrap initialize the engine and execute a startup script.
@@ -234,15 +233,17 @@ func Bootstrap(startupScript string, options EngineOptions) {
 
 	progpAPI.SetScriptFileExecutor(executeScript)
 
-	// If the debugger is requested then a wait message is printed
-	// and only once connected our script is executed.
-	//
-	if gEngineOptions.LaunchDebugger {
-		gDefaultScriptEngine.WaitDebuggerReady()
-	}
-
 	if startupScript != "" {
-		scriptErr := executeScript(scriptEngine.CreateNewIsolate(options.SecurityGroup, options.IsolateData), startupScript)
+		ctx := scriptEngine.CreateNewScriptContext(options.SecurityGroup)
+
+		// If the debugger is requested then a wait message is printed
+		// and only once connected our script is executed.
+		//
+		if gEngineOptions.LaunchDebugger {
+			gDefaultScriptEngine.WaitDebuggerReady()
+		}
+
+		scriptErr := executeScript(ctx, startupScript)
 
 		// We manage error only when it's the startup script.
 		//
