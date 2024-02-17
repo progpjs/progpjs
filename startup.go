@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package progpScripts
+package progpjs
 
 import (
 	"github.com/go-sourcemap/sourcemap"
 	"github.com/progpjs/progpAPI"
 	"github.com/progpjs/progpAPI/codegen"
-	"github.com/progpjs/progpScripts/scriptTransformer"
+	"github.com/progpjs/progpjs/scriptTransformer"
 	"os"
 	"path"
 	"plugin"
@@ -147,10 +147,8 @@ const (
 //region Config items
 
 type EngineOptions struct {
-	SecurityGroup             string
 	ScriptEngineName          string
 	PluginsDir                string
-	LaunchDebugger            bool
 	OnScriptCompilationError  func(scriptPath string, err error) bool
 	OnRuntimeError            progpAPI.RuntimeErrorHandlerF
 	OnScriptTerminated        progpAPI.ScriptTerminatedHandlerF
@@ -171,7 +169,7 @@ func GetScriptEngine() progpAPI.ScriptEngine {
 	return gDefaultScriptEngine
 }
 
-func executeScript(ctx progpAPI.ScriptContext, scriptPath string) *progpAPI.ScriptErrorMessage {
+func executeScript(ctx progpAPI.JsContext, scriptPath string) *progpAPI.JsErrorMessage {
 	// Transform typescript file (and others supported types) as plain javascript.
 	// It big a big file with all the requirements.
 	//
@@ -237,10 +235,6 @@ func Bootstrap(options EngineOptions) {
 	// avoid some errors which can occurs before exiting.
 	//
 	runtime.GC()
-
-	if gEngineOptions.LaunchDebugger {
-		scriptEngine.WaitDebuggerReady()
-	}
 }
 
 func WaitEnd(forceEnd bool) {
@@ -255,16 +249,14 @@ func WaitEnd(forceEnd bool) {
 	progpAPI.ForceExitingVM()
 }
 
-// ExecuteScript executes a script inside this context.
-// It must be used once and don't allow executing more than one script.
-func ExecuteScript(scriptContent string, compiledFilePath string, sourceScriptPath string) *progpAPI.ScriptErrorMessage {
-	ctx := GetScriptEngine().CreateNewScriptContext("")
-	return ctx.ExecuteScript(scriptContent, compiledFilePath, sourceScriptPath)
-}
-
 // ExecuteScriptFile is like ExecuteScript but allows using a file (which can be typescript).
-func ExecuteScriptFile(scriptPath string) *progpAPI.ScriptErrorMessage {
-	ctx := GetScriptEngine().CreateNewScriptContext("")
+func ExecuteScriptFile(scriptPath string, securityGroup string, mustDebug bool) *progpAPI.JsErrorMessage {
+	ctx := gDefaultScriptEngine.CreateNewScriptContext(securityGroup, mustDebug)
+
+	if mustDebug {
+		gDefaultScriptEngine.WaitDebuggerReady()
+	}
+
 	return ctx.ExecuteScriptFile(scriptPath)
 }
 
@@ -290,7 +282,7 @@ func configureCore() {
 	// Will allows to translate error message from plain javascript to typescript.
 	// This by using a sourcemap to decode.
 	//
-	progpAPI.SetErrorTranslator(func(message *progpAPI.ScriptErrorMessage) {
+	progpAPI.SetErrorTranslator(func(message *progpAPI.JsErrorMessage) {
 		executingScript := message.ScriptPath
 
 		sourceMapFileContent, err := os.ReadFile(executingScript + ".map")
