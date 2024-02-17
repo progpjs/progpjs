@@ -196,9 +196,9 @@ func executeScript(ctx progpAPI.ScriptContext, scriptPath string) *progpAPI.Scri
 // Bootstrap initialize the engine and execute a startup script.
 // If the script path is blank, then no script is executed.
 // In all case the engine is initialized.
-func Bootstrap(options EngineOptions) progpAPI.ScriptEngine {
+func Bootstrap(options EngineOptions) {
 	if gIsBootstrapped {
-		return gDefaultScriptEngine
+		return
 	}
 
 	gIsBootstrapped = true
@@ -241,8 +241,31 @@ func Bootstrap(options EngineOptions) progpAPI.ScriptEngine {
 	if gEngineOptions.LaunchDebugger {
 		scriptEngine.WaitDebuggerReady()
 	}
+}
 
-	return scriptEngine
+func WaitEnd(forceEnd bool) {
+	if !forceEnd {
+		// Wait until all background task finished.
+		// A background task can be a webserver is list for call.
+		// In this case the tasks never ends until the server is stopped.
+		//
+		progpAPI.WaitTasksEnd()
+	}
+
+	progpAPI.ForceExitingVM()
+}
+
+// ExecuteScript executes a script inside this context.
+// It must be used once and don't allow executing more than one script.
+func ExecuteScript(scriptContent string, compiledFilePath string, sourceScriptPath string) *progpAPI.ScriptErrorMessage {
+	ctx := GetScriptEngine().CreateNewScriptContext("")
+	return ctx.ExecuteScript(scriptContent, compiledFilePath, sourceScriptPath)
+}
+
+// ExecuteScriptFile is like ExecuteScript but allows using a file (which can be typescript).
+func ExecuteScriptFile(scriptPath string) *progpAPI.ScriptErrorMessage {
+	ctx := GetScriptEngine().CreateNewScriptContext("")
+	return ctx.ExecuteScriptFile(scriptPath)
 }
 
 func exportExposedFunctions() {
