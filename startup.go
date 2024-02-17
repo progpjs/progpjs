@@ -196,12 +196,12 @@ func executeScript(ctx progpAPI.ScriptContext, scriptPath string) *progpAPI.Scri
 // Bootstrap initialize the engine and execute a startup script.
 // If the script path is blank, then no script is executed.
 // In all case the engine is initialized.
-func Bootstrap(startupScript string, options EngineOptions) {
+func Bootstrap(options EngineOptions) progpAPI.ScriptEngine {
 	if gIsBootstrapped {
-		return
+		return gDefaultScriptEngine
 	}
-	gIsBootstrapped = true
 
+	gIsBootstrapped = true
 	gEngineOptions = options
 
 	// Get the function registry and declare all the function to the script engine implementation.
@@ -233,32 +233,16 @@ func Bootstrap(startupScript string, options EngineOptions) {
 
 	progpAPI.SetScriptFileExecutor(executeScript)
 
-	if startupScript != "" {
-		ctx := scriptEngine.CreateNewScriptContext(options.SecurityGroup)
-
-		// If the debugger is requested then a wait message is printed
-		// and only once connected our script is executed.
-		//
-		if gEngineOptions.LaunchDebugger {
-			gDefaultScriptEngine.WaitDebuggerReady()
-		}
-
-		scriptErr := executeScript(ctx, startupScript)
-
-		// We manage error only when it's the startup script.
-		//
-		if scriptErr != nil {
-			// If no error the script exit but the VM must continue to execute
-			// if a background task is executing. If error, then stop all.
-			//
-			progpAPI.ForceExitingVM()
-		}
-	}
-
 	// Allows closing resources correctly and
 	// avoid some errors which can occurs before exiting.
 	//
 	runtime.GC()
+
+	if gEngineOptions.LaunchDebugger {
+		scriptEngine.WaitDebuggerReady()
+	}
+
+	return scriptEngine
 }
 
 func exportExposedFunctions() {
