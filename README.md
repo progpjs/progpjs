@@ -1,4 +1,4 @@
-# ProgpJS progpScripts
+# ProgpJS v2
 
 This library implements high level API for executing scripts.  
 For low level API, see progpAPI.
