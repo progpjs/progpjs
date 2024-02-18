@@ -169,11 +169,15 @@ func GetScriptEngine() progpAPI.ScriptEngine {
 	return gDefaultScriptEngine
 }
 
+func compileScript(scriptPath string) (string, string, error) {
+	return scriptTransformer.CompileJavascriptFile(scriptPath)
+}
+
 func executeScript(ctx progpAPI.JsContext, scriptPath string) *progpAPI.JsErrorMessage {
 	// Transform typescript file (and others supported types) as plain javascript.
 	// It big a big file with all the requirements.
 	//
-	scriptContent, scriptOrigin, err := scriptTransformer.CompileJavascriptFile(scriptPath)
+	scriptContent, scriptOrigin, err := compileScript(scriptPath)
 
 	// If ko, the error message has already been displayed.
 	// Then we only have to exit.
@@ -230,6 +234,7 @@ func Bootstrap(options EngineOptions) {
 	scriptEngine.Start()
 
 	progpAPI.SetScriptFileExecutor(executeScript)
+	progpAPI.SetScriptFileCompiler(compileScript)
 
 	// Allows closing resources correctly and
 	// avoid some errors which can occurs before exiting.
