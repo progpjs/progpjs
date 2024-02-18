@@ -25,7 +25,6 @@ import (
 	"path"
 	"plugin"
 	"runtime"
-	"strings"
 )
 
 //region Script engine resolver
@@ -149,6 +148,7 @@ const (
 type EngineOptions struct {
 	ScriptEngineName          string
 	PluginsDir                string
+	ProgpV8EngineProjectDir   string
 	OnScriptCompilationError  func(scriptPath string, err error) bool
 	OnRuntimeError            progpAPI.RuntimeErrorHandlerF
 	OnScriptTerminated        progpAPI.ScriptTerminatedHandlerF
@@ -210,7 +210,7 @@ func Bootstrap(options EngineOptions) {
 	// Will create dynamic function, or update the compiled code if env variable PROGPV8_DIR
 	// points to the source dir of "scriptEngine.progpV8".
 	//
-	exportExposedFunctions()
+	exportExposedFunctions(options.ProgpV8EngineProjectDir)
 
 	// Configure things for the core functionalities.
 	configureCore()
@@ -265,21 +265,27 @@ func ExecuteScriptFile(scriptPath string, securityGroup string, mustDebug bool) 
 	return ctx.ExecuteScriptFile(scriptPath)
 }
 
-func exportExposedFunctions() {
+func exportExposedFunctions(progpV8EngineProjectDir string) {
 	// If the directory is provided then build an optimized version of the sources
 	// which avoid using reflection. It's much more fast!
 	//
 	// Without that, it uses "draft functions" which use reflection and are very slow.
-	//
-	progpV8Dir := strings.Trim(os.Getenv("PROGPV8_DIR"), " ")
 
-	mustUseDynamicMode := progpV8Dir == ""
+	mustUseDynamicMode := progpV8EngineProjectDir == ""
+
+	if !mustUseDynamicMode {
+		if !path.IsAbs(progpV8EngineProjectDir) {
+			cwd, _ := os.Getwd()
+			progpV8EngineProjectDir = path.Join(cwd, progpV8EngineProjectDir)
+		}
+	}
+
 	fctRegistry := progpAPI.GetFunctionRegistry()
 	fctRegistry.EnableDynamicMode(mustUseDynamicMode)
 
 	if !mustUseDynamicMode {
 		codeGen := codegen.NewProgpV8Codegen()
-		codeGen.GenerateCode(progpV8Dir)
+		codeGen.GenerateCode(progpV8EngineProjectDir)
 	}
 }
 
