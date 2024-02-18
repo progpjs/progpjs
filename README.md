@@ -184,6 +184,17 @@ found inside your executable, the engine will automatically search it outside.
 This flags allows to use the same ABI (internal libraries) when debugging or executing without debugger.
 Without that it would not be possibly to start the debugger.
 
+## How to debug?
+
+When using the sample project, the javascript debugger is enable by setting the environnement variable "PROGP_DEBUG" to 1.
+Once started in debug mode a message is printed in the console, asking you to open the url "chrome://inspect/#devices"
+in Chrome browser. Once done you can click on "Open dedicated DevTools for Node" to open the debug window.
+
+> The debugger is limited and can only debugger the first script executed with ProgpJS (which is the only one
+in most project). It's a limitation of the V8 debugger which is build for Node.js and only execute one script.
+
+> The debugger don't work anymore if you close and reopen his windows. No workaround is possible.
+
 ## Some little samples
 
 ### Exposing Go functions to javascript
