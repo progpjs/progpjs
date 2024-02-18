@@ -18,7 +18,7 @@ package progpjs
 
 import (
 	"embed"
-	"github.com/progpjs/progpAPI"
+	"github.com/progpjs/progpAPI/v2"
 )
 
 func GetFunctionRegistry() *progpAPI.FunctionRegistry {

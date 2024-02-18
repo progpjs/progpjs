@@ -18,9 +18,9 @@ package progpjs
 
 import (
 	"github.com/go-sourcemap/sourcemap"
-	"github.com/progpjs/progpAPI"
-	"github.com/progpjs/progpAPI/codegen"
-	"github.com/progpjs/progpjs/scriptTransformer"
+	"github.com/progpjs/progpAPI/v2"
+	"github.com/progpjs/progpAPI/v2/codegen"
+	"github.com/progpjs/progpjs/v2/scriptTransformer"
 	"os"
 	"path"
 	"plugin"
