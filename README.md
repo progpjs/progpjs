@@ -40,31 +40,34 @@ use it as-is, without any configuration required. Moreover with ProgpJS error me
 not the underlying javascript code!
 
 * ProgpJS comes with his own ReactJS implementation, which is optimized for Server Side Rendering.
-  It's a works in progress but it's very interesting and it allows you to dow thing like
+  It's a works in progress but it's very interesting and it allows you to do thing like
  ```(<MyReactComponent />).toString()``` to render React components, without needing installing/initializing anything.
 
 * ProgpJS allows you to embed your script, resources, and dependencies in the final executable, doing that deploying your code
 only require to copy/past a uniq file.
 
-### WSL2 but not Windows
+### Linux, Apple, WSL2, X64 and ARM. But not Windows
 
 The current version of ProgpJS isn't supported on Windows but works with WSL2. The reason being that Go don't work
 well with the Clang version used to compile V8 on Windows. Previously it was possible to compile v8 with MingGW, but
 the recent version can't. It must be possible to create a DLL enclosing V8, but I don't choose to do it mainly
 because I will probably add support for another javascript engine which will be fully compatibly with Windows.
 
-ProgJS works well on x64 and ARM64, also Apple Silicon. x64 processors aren't currently supported, since the
-v8 engine don't support it.
+ProgJS works well on x64 and ARM64, also Apple Silicon. x86 processors aren't currently supported, since the
+v8 engine don't support it. I don't know if some projects require x86 support, if it's the case feel free to contact
+me in order to discuss it.
 
 ## ProgpJS author
 
-## I'm freelance on complex full stack project
+## I'm freelance on complex full stack projects
 
 Hello I'm Johan PIQUET, and I'm the author of ProgpJS. I'm a freelance working mainly on full stack projects 
-where a high level of coding competencies are required.
+where a high level of coding competencies are required. My clients are small compagnies but also prestigious compagnies
+for whom I carry out project management missions as well as software development missions.
 
-If you are search a coder with a very good level in Go, C++, javascript, node.js, ReactJS, then
-feel free to contact me on the project discord page [link](https://discord.com/channels/1193642220092403772/1193642220092403775) or my LinkedIn [link](https://www.linkedin.com/in/johan-piquet-72219114/).
+If you are searching someone with good relational competencies able to manage a team of young developers
+and develop their skills, then feel free to contact me n the project discord page [link](https://discord.com/channels/1193642220092403772/1193642220092403775) or my LinkedIn [link](https://www.linkedin.com/in/johan-piquet-72219114/).
+Also as you guess I'm very proficient in Go, C++, Javascript, Node.js and ReactJs.
 
 I'm from France and I live between Lyon and Grenoble. If you are near there, I would be happy
 to meet you in order to speak of your projects.
@@ -72,9 +75,9 @@ to meet you in order to speak of your projects.
 ## Why I created ProgpJS ?
 
 In his first version ProgpJS was a simple javascript engine allowing to configure a big application.
-It's why ProgpJS means "PROGrammable Pipeline with JavaScript". After this project I worked on a very
-fast HTTP server, it's why I do evolve ProgpJS and add him this very fast http server. It's using a hacked
-version of FastHTTP internally, which was the faster http server for years. This hacked version
+It's why ProgpJS means "PROGrammable Pipeline with JavaScript". After this project I worked on a project
+requiring a very fast HTTP server, it's why I do evolve ProgpJS and add him this very fast http server.
+It's using a hacked version of FastHTTP internally, which was the faster http server for years. This hacked version
 allows mixing Go and Javascript code, and allows smooth restart: loading a new version of your application
 without stopping the current requests.
 
@@ -86,7 +89,7 @@ you the right to use ProgpJS. Its allows you to avoid some possible difficulties
 can turn against you. These are rare cases, but it is better to protect yourself from the start!
 
 I choose this licence in order to allow using ProgpJS in my clients projets while preventing any possible trouble
-about licence and right to use, while avoiding ownership difficulties about ProgpJS.
+about licence, ownership and right to use.
 
 ### Benchmarks
 
@@ -98,17 +101,17 @@ And Go encodes his strings and data very differently that what C++ does, adding 
 
 Yes it's true, creating a fast javascript engine for Go was very challenging! The first internal version of
 ProgpJS was much slower than Node.js. The second internal version was faster than DenoJS and BunJS,
-but very difficult to maintains. The third version was the first public one and was easy to use and maintains, while been
+but very difficult to maintains. The third version, which is the first public one, was easy to use and maintains, while been
 only a little slower than DenoJS. The current version (v2 public version) has the same speed as the previous version
-but had multi-context, which allows to use all core of your server. It can make thing much, much faster if your
-application do heaving thing (but generally you will not use javascript for this type of task, but Go code).
+but add multi-context, which allows to use all core of your server. It can make thing much, much faster if your
+application do heaving thing with javascript.
 
 Here is the result of a benchmark in four rounds. It's run on my Macbook Air M1.
 It's a simple benchmark where the goal is to respond to an HTTP request by "hello world".
 This test allows to have an idea of the raw speed of the internal stack and detect performance drop.
 It's why I use it each time I do evolve the core.
 
-> WARNING: ProgpJS uses two execution modes: compiled and dynamic mode. Dynamic mode is much slower and his goal
+> WARNING: ProgpJS uses two execution modes: compiled and dynamic mode. Dynamic mode is slow, his goal
 is to make dev workflows faster, mainly by allowing to use Go plugins functionalities. If you want to benchmark ProgpJS,
 you must enable the compiled version (see the README of "samples" project).
 
@@ -125,70 +128,74 @@ you must enable the compiled version (see the README of "samples" project).
 #5 - NodeJS ? ... is scratching (near the 250 clients)
 
 Here the drop in performances is du to the fact that I can't optimize the code further, while pure C++ project can.
-This drop is limited, the performance slow down gradualy but slower when the number of concurrent requests raise.
+This drop is limited, the performance slow down gradually when the number of concurrent requests raise.
 
 > **Round 3, 1500 clients:**  
 #1 - DenoJS with 99199 req/sec  
 #2 - ProgpJS with 79421 req/sec
 
 This test allows to see that ProgpJS is very stable, even when been bombarded with a lot of connexion.
-His speed is stable (it don't drop suddenly) and his memory usage is stable (about 80Mo here).
+His speed is stable (it doesn't drop suddenly) and his memory usage is stable (about 80mb here).
 
 > **Round 4, 1500 clients while using a special version:**  
 #1 - ProgpJS with 169441 req/sec  
 #2 - DenoJS with 99199 req/sec  
 
 Here it's not the same code since Go intercept the http call, check a cache and call the javascript
-only when the cache is empty. It's easy to this with ProgpJS, which allow us to go over what a pure javascript
+only when the cache is empty. It's easy to do this with ProgpJS, which allow us to go over what a pure javascript
 solution can do. 
 
 ## Roadmap of ProgpJS
 
 I haven't a roadmap today, but I'm starting a new project where I will need to use the QuickJS engine
-which is another javascript runtime. It's much more light than V8, and it can be a lot faster than v8 when using
-short-lived scripts. QuickJS is slower to execute but he his a lot faster to start, doing that the overall speed
+which is another javascript runtime. It's much more light than V8, and it can be a lot faster when using
+short-lived scripts. QuickJS is slower to execute, but is a lot faster to start, doing that the overall speed
 is better for solutions where starting a lot of small scripts.
 
-About Node.js compatibility I'm adding more and more support. I have functions when I need them, the exception
-being the module "fs" where I added a lot a functions (without testing them), mainly in order to detect functionality
-that was missing in ProgpJS core. Most of the functionalities in the packages "process" and "os" are supported,
-while the package "path" is fully compatible. The package "fs" is work in progress. I'm planing to add support for stream,
-which will allows to mix Go and javascript streams.
+About Node.js compatibility I'm adding more and more support, but it takes time, mainly because
+I need to do a lot of compatibility tests for each function and track the exact behaviors of Node.js.
+The package "path" is fully compatible and tested, while package "process", "os" and "fs" are only partially implemented
+and barely tested. My actual goal was mainly to known if thing was missing or if the core of ProgpJS already
+implements all the prerequisites.
 
 ## How to start
 
 ### The "samples" project
 
 ProgpJS is a toolbox for Go developer and it's why it doesn't have an executable like Node.js.
+Perhaps when it will be more compatible with Node.js, but it's not the case today, nor his goal.
+
 The best way to start with ProgpJS is to clone the "samples" project [(link)](https://github.com/progpjs/samples)
-which is fully commented and very simple to understand. It show you how to start, how to customize the javascript engine
+which is fully commented and very simple to understand. It shows you how to start, how to customize the javascript engine
 and how to expose your Go functions.
 
-You can read the file README.md of this project, which explains you how to create your fist project and use one
+You can read the file README.md of this project, which explains to you how to create your fist project and use one
 of the 3 execution mode: compiled mode, dynamic mode or plugin mode.
 
-Compiled mode - ProgpJS works by generating Go and C++ code in order to hide all the technical complexity, while integrating things
+**Compiled mode** - ProgpJS works by generating Go and C++ code in order to hide all the technical complexity, while integrating things
 allowing ProgpJS to be much faster than what hand made code could do. It automatically rebuilds himself when a change
 is detected, doing the whole process simple and automatic.
 
-Plugin mode - Another execution mode has been added and is the default execution mode. It allows to use Go plugin functionalities
-which are something like DLL for windows. It's very interesting because the file libv8.a is near 100Mb, and it's why
+**Plugin mode** - Another execution mode has been added and is the default execution mode. It allows to use Go plugin functionalities
+which are something like DLL for Windows. It's very interesting because the file libv8.a is near 100Mb, and it's why
 ProgpJS is very slow to rebuild when you are updating your code (about 5 secondes on my Macbook Air). When compiled
 as a plugin, it's less than one second.
 
-Dynamic mode - This mode is what ProgJS enavle when he don't find the source code of the project ProgpV8Engine.
+**Dynamic mode** - This mode is what ProgJS enavle when he don't find the source code of the project ProgpV8Engine.
 It uses reflection to known how too call our Go function, which is slow.
 
 ## How to debug?
 
-ProgpJS implements the debugger protocol which allow to debug your javascript code with the debugger of the Chrome browser.  
-When using the "samples" project, you can enable the javascript debugger by setting the environnement variable "PROGP_DEBUG" to 1.
+ProgpJS implements the debugger protocol which allow to debug your javascript code with the debugger of the Chrome browser,
+the same used to debug a web page. When using the "samples" project, you can enable the javascript debugger by setting
+the environnement variable "PROGP_DEBUG" to 1. 
+
 Once started in debug mode a message is printed in the console, asking you to open the url "chrome://inspect/#devices"
 in Chrome browser. Once done you can click on "Open dedicated DevTools for Node" to open the debug window.
 
-> The debugger is limited and can only debug the first script executed with ProgpJS (which is the only one
-in most project). It's a limitation of the V8 debugger layer build for Node.js, which only use one script
-and don't support executing other script inside other execution spaces (called isolate here).
+> The debugger is limited and can only debug the first script executed with ProgpJS, mainly because this protocol
+it has been created for Node.js, which only use one script. There is possible workarounds, but I didn't have time
+to work on this hacks.
 
 ## Some little samples
 
