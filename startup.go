@@ -153,6 +153,11 @@ type EngineOptions struct {
 	OnRuntimeError            progpAPI.RuntimeErrorHandlerF
 	OnScriptTerminated        progpAPI.ScriptTerminatedHandlerF
 	OnCheckingAllowedFunction progpAPI.CheckAllowedFunctionsF
+
+	// ScriptAutomaticHeader allows to insert an head at the start of each script.
+	// If blank, then use the default value which is : import '@progp/core'
+	// If you don"t want an header the use a string with only a space or "//".
+	ScriptAutomaticHeader string
 }
 
 var gJavascriptModuleProviders = make(map[string]JavascriptModuleProviderF)
@@ -170,7 +175,7 @@ func GetScriptEngine() progpAPI.ScriptEngine {
 }
 
 func compileScript(scriptPath string) (string, string, error) {
-	return scriptTransformer.CompileJavascriptFile(scriptPath)
+	return scriptTransformer.CompileJavascriptFile(scriptPath, gEngineOptions.ScriptAutomaticHeader)
 }
 
 func executeScript(ctx progpAPI.JsContext, scriptPath string) *progpAPI.JsErrorMessage {

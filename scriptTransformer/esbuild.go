@@ -19,12 +19,13 @@ func (m *ScriptCompilationError) Error() string {
 	return m.message
 }
 
-func CompileJavascriptFile(scriptPath string) (string, string, error) {
+func CompileJavascriptFile(scriptPath string, scriptPrefix string) (string, string, error) {
+	if scriptPrefix == "" {
+		scriptPrefix = "import '@progp/core'"
+	}
 	fileExt := path.Ext(scriptPath)
 
 	if slices.Contains(gAllowsScriptExtensions, fileExt) {
-		scriptPrefix := "import '@progp/core'"
-
 		compileResult, err := bundleJavascriptScriptEntryPoint(scriptPath, scriptPrefix, true)
 		if err != nil {
 			return "", "", err
