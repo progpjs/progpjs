@@ -57,6 +57,11 @@ ProgJS works well on x64 and ARM64, also Apple Silicon. x86 processors aren't cu
 v8 engine don't support it. I don't know if some projects require x86 support, if it's the case feel free to contact
 me in order to discuss it.
 
+### Discord Server
+
+The project has a Discord server allowing us to share about ProgpJS.
+Here is the link: [discord link](https://discord.com/channels/1193642220092403772/1193642220092403775)
+
 ## ProgpJS author
 
 ## I'm freelance on complex full stack projects
@@ -66,7 +71,7 @@ where a high level of coding competencies are required. My clients are small com
 for whom I carry out project management missions as well as software development missions.
 
 If you are searching someone with good relational competencies able to manage a team of young developers
-and develop their skills, then feel free to contact me n the project discord page [link](https://discord.com/channels/1193642220092403772/1193642220092403775) or my LinkedIn [link](https://www.linkedin.com/in/johan-piquet-72219114/).
+and develop their skills, then feel free to contact me on the project discord page [link](https://discord.com/channels/1193642220092403772/1193642220092403775) or my LinkedIn [link](https://www.linkedin.com/in/johan-piquet-72219114/).
 Also as you guess I'm very proficient in Go, C++, Javascript, Node.js and ReactJs.
 
 I'm from France and I live between Lyon and Grenoble. If you are near there, I would be happy
@@ -93,7 +98,7 @@ about licence, ownership and right to use.
 
 ### Benchmarks
 
-**Its was very difficult but today ProgpJs completely is near x2 faster than NodeJS !**
+**Its was very difficult but today ProgpJs is near x2 faster than NodeJS !**
 
 V8 engine + GO ? Don't, it's slow! If you speak with some knowledgeable people it's what they will tell you.
 They will tell you that Go uses virtual threads, and it's why C++ calls are very slow. And Go uses garbage collector.
@@ -159,6 +164,11 @@ and barely tested. My actual goal was mainly to known if thing was missing or if
 implements all the prerequisites.
 
 ## How to start
+
+### My tutorials on Dev.TO community
+
+You can follow me on Dev.to where I add tutorials about ProgpJS.
+Here is the link to my profile: https://dev.to/johanpiquet
 
 ### The "samples" project
 
