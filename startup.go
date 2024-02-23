@@ -151,10 +151,11 @@ type EngineOptions struct {
 	PluginsDir              string
 	ProgpV8EngineProjectDir string
 
-	OnScriptCompilationError  func(scriptPath string, err error) bool
+	OnScriptCompilationError  progpAPI.OnScriptCompilationErrorF
 	OnRuntimeError            progpAPI.RuntimeErrorHandlerF
 	OnScriptTerminated        progpAPI.ScriptTerminatedHandlerF
 	OnCheckingAllowedFunction progpAPI.CheckAllowedFunctionsF
+	OnSignal                  progpAPI.ListenProgpSignalF
 
 	// ScriptAutomaticHeader allows to insert an head at the start of each script.
 	// If blank, then use the default value which is : import '@progp/core'
@@ -243,10 +244,22 @@ func bootstrapWithOptions(options *EngineOptions) {
 	progpAPI.SetScriptFileExecutor(executeScript)
 	progpAPI.SetScriptFileCompiler(compileScript)
 
+	gSignalHandler = options.OnSignal
+
 	// Allows closing resources correctly and
 	// avoid some errors which can occurs before exiting.
 	//
 	runtime.GC()
+}
+
+var gSignalHandler progpAPI.ListenProgpSignalF
+
+func EmitProgpSignal(ctx progpAPI.JsContext, signal string) error {
+	if gSignalHandler != nil {
+		return gSignalHandler(ctx, signal)
+	}
+
+	return nil
 }
 
 func WaitEnd(forceEnd bool) {

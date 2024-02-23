@@ -21,11 +21,10 @@ import (
 	"path"
 )
 
-func CreateDefaultEngineOptions(enableDebug bool) *EngineOptions {
+func DefaultBootstrapOptions() *EngineOptions {
 	options := &EngineOptions{}
 	cwd, _ := os.Getwd()
 
-	options.MustDebug = enableDebug
 	options.PluginsDir = path.Join(cwd, "..", "..", "_plugins")
 	options.ProgpV8EngineProjectDir = os.Getenv("PROGPV8_DIR")
 
@@ -37,8 +36,10 @@ func CreateDefaultEngineOptions(enableDebug bool) *EngineOptions {
 
 func Bootstrap(scriptPath string, enableDebug bool, options *EngineOptions) {
 	if options == nil {
-		options = CreateDefaultEngineOptions(enableDebug)
+		options = DefaultBootstrapOptions()
 	}
+
+	options.MustDebug = enableDebug
 
 	if scriptPath != "" && !path.IsAbs(scriptPath) {
 		cwd, _ := os.Getwd()
