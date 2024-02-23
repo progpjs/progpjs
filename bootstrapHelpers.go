@@ -17,6 +17,7 @@
 package progpjs
 
 import (
+	"github.com/progpjs/progpAPI/v2"
 	"os"
 	"path"
 )
@@ -34,7 +35,7 @@ func DefaultBootstrapOptions() *EngineOptions {
 	return options
 }
 
-func Bootstrap(scriptPath string, enableDebug bool, options *EngineOptions) {
+func Bootstrap(scriptPath string, enableDebug bool, options *EngineOptions) BootstrapExitAwaiterF {
 	if options == nil {
 		options = DefaultBootstrapOptions()
 	}
@@ -57,13 +58,28 @@ func Bootstrap(scriptPath string, enableDebug bool, options *EngineOptions) {
 	// Here we set the security group to "admin". The meaning is related to options.OnCheckingAllowedFunction
 	// and the rules you put here.
 	//
-	scriptErr := ExecuteScriptFile(scriptPath, "admin", options.MustDebug)
+	var scriptErr *progpAPI.JsErrorMessage
+	//
+	go func() {
+		scriptErr = ExecuteScriptFile(scriptPath, "admin", options.MustDebug)
+	}()
 
-	// Will wait until all background tasks termine and dispose the script engine.
-	// A background task is for exemple a web server listening a port.
-	// In this case, it's never ends.
+	// Allows scriptErr to be initialized if they are an error.
 	//
-	// Calling this function is important, since without that the app exit immediately.
+	// TODO: add an option to ExecuteScriptFile in order call a callback function
+	//       allowing to known if the compilation sted is ok.
 	//
-	WaitEnd(scriptErr != nil)
+	progpAPI.PauseMs(100)
+
+	return func() {
+		// Will wait until all background tasks terminate and dispose the script engine.
+		// A background task is for example a web server listening a port.
+		// In this case, it's never ends.
+		//
+		// Calling this function is important, since without that the app exit immediately.
+		//
+		WaitEnd(scriptErr != nil)
+	}
 }
+
+type BootstrapExitAwaiterF func()
