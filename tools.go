@@ -40,3 +40,20 @@ func ReturnEmbeddedTypescriptModule(fs embed.FS, innerPath string) JavascriptMod
 		return
 	}
 }
+
+var gSignalListeners []progpAPI.ListenProgpSignalF
+
+func AddSignalListener(listener progpAPI.ListenProgpSignalF) {
+	gSignalListeners = append(gSignalListeners, listener)
+}
+
+func onProgpJsSignal(ctx progpAPI.JsContext, signal string) error {
+	for _, listener := range gSignalListeners {
+		err := listener(ctx, signal)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

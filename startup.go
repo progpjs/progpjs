@@ -155,7 +155,6 @@ type EngineOptions struct {
 	OnRuntimeError            progpAPI.RuntimeErrorHandlerF
 	OnScriptTerminated        progpAPI.ScriptTerminatedHandlerF
 	OnCheckingAllowedFunction progpAPI.CheckAllowedFunctionsF
-	OnSignal                  progpAPI.ListenProgpSignalF
 
 	// ScriptAutomaticHeader allows to insert an head at the start of each script.
 	// If blank, then use the default value which is : import '@progp/core'
@@ -244,7 +243,7 @@ func bootstrapWithOptions(options *EngineOptions) {
 	progpAPI.SetScriptFileExecutor(executeScript)
 	progpAPI.SetScriptFileCompiler(compileScript)
 
-	gSignalHandler = options.OnSignal
+	gSignalHandler = onProgpJsSignal
 
 	// Allows closing resources correctly and
 	// avoid some errors which can occurs before exiting.

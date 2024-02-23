@@ -29,6 +29,10 @@ func DefaultBootstrapOptions() *EngineOptions {
 	options.PluginsDir = path.Join(cwd, "..", "..", "_plugins")
 	options.ProgpV8EngineProjectDir = os.Getenv("PROGPV8_DIR")
 
+	if (options.ProgpV8EngineProjectDir != "") && !path.IsAbs(options.ProgpV8EngineProjectDir) {
+		options.ProgpV8EngineProjectDir = path.Join(cwd, options.ProgpV8EngineProjectDir)
+	}
+
 	// Optional, allows selecting the engine when more than one is available.
 	options.ScriptEngineName = "progpV8"
 
