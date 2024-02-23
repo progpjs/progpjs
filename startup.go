@@ -180,7 +180,7 @@ func compileScript(scriptPath string) (string, string, error) {
 	return scriptTransformer.CompileJavascriptFile(scriptPath, gEngineOptions.ScriptAutomaticHeader)
 }
 
-func executeScript(ctx progpAPI.JsContext, scriptPath string) *progpAPI.JsErrorMessage {
+func executeScript(ctx progpAPI.JsContext, scriptPath string, onCompiledSuccess func()) *progpAPI.JsErrorMessage {
 	// Transform typescript file (and others supported types) as plain javascript.
 	// It big a big file with all the requirements.
 	//
@@ -199,6 +199,7 @@ func executeScript(ctx progpAPI.JsContext, scriptPath string) *progpAPI.JsErrorM
 		os.Exit(1)
 	}
 
+	onCompiledSuccess()
 	return ctx.ExecuteScript(scriptContent, scriptOrigin, scriptPath)
 }
 
@@ -274,14 +275,14 @@ func WaitEnd(forceEnd bool) {
 }
 
 // ExecuteScriptFile is like ExecuteScript but allows using a file (which can be typescript).
-func ExecuteScriptFile(scriptPath string, securityGroup string, mustDebug bool) *progpAPI.JsErrorMessage {
+func ExecuteScriptFile(scriptPath string, securityGroup string, mustDebug bool, onCompiledSuccess func()) *progpAPI.JsErrorMessage {
 	ctx := gDefaultScriptEngine.CreateNewScriptContext(securityGroup, mustDebug)
 
 	if mustDebug {
 		gDefaultScriptEngine.WaitDebuggerReady()
 	}
 
-	return ctx.ExecuteScriptFile(scriptPath)
+	return ctx.ExecuteScriptFile(scriptPath, onCompiledSuccess)
 }
 
 func exportExposedFunctions(progpV8EngineProjectDir string) {

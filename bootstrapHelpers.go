@@ -20,6 +20,7 @@ import (
 	"github.com/progpjs/progpAPI/v2"
 	"os"
 	"path"
+	"sync"
 )
 
 func DefaultBootstrapOptions() *EngineOptions {
@@ -55,25 +56,32 @@ func Bootstrap(scriptPath string, enableDebug bool, options *EngineOptions) Boot
 	bootstrapWithOptions(options)
 
 	// Execute our script.
-	//
-	// The current thread block until the script has totally terminated to execute.
-	// If it's not what you want, then add "go " before in order to create a new thread.
-	//
-	// Here we set the security group to "admin". The meaning is related to options.OnCheckingAllowedFunction
-	// and the rules you put here.
+	// Here we execute the script in a parallel thread in order to don't block the caller.
+	// This allows to make things more simple when embedding the engine.
 	//
 	var scriptErr *progpAPI.JsErrorMessage
+	var mutex sync.Mutex
+	mutex.Lock()
 	//
 	go func() {
-		scriptErr = ExecuteScriptFile(scriptPath, "admin", options.MustDebug)
+		isUnlocked := false
+
+		// Here we set the security group to "admin". The meaning is related to options.OnCheckingAllowedFunction
+		// and the rules you put here.
+		//
+		scriptErr = ExecuteScriptFile(scriptPath, "admin", options.MustDebug, func() {
+			// Unlock if script compilation is ok.
+			isUnlocked = true
+			mutex.Unlock()
+		})
+
+		if !isUnlocked {
+			// Unlock if error.
+			mutex.Lock()
+		}
 	}()
 
-	// Allows scriptErr to be initialized if they are an error.
-	//
-	// TODO: add an option to ExecuteScriptFile in order call a callback function
-	//       allowing to known if the compilation sted is ok.
-	//
-	progpAPI.PauseMs(100)
+	mutex.Lock()
 
 	return func() {
 		// Will wait until all background tasks terminate and dispose the script engine.
