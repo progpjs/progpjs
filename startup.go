@@ -146,9 +146,11 @@ const (
 //region Config items
 
 type EngineOptions struct {
-	ScriptEngineName          string
-	PluginsDir                string
-	ProgpV8EngineProjectDir   string
+	MustDebug               bool
+	ScriptEngineName        string
+	PluginsDir              string
+	ProgpV8EngineProjectDir string
+
 	OnScriptCompilationError  func(scriptPath string, err error) bool
 	OnRuntimeError            progpAPI.RuntimeErrorHandlerF
 	OnScriptTerminated        progpAPI.ScriptTerminatedHandlerF
@@ -167,7 +169,7 @@ type JavascriptModuleProviderF func(resourcePath string) (content string, loader
 //endregion
 
 var gIsBootstrapped = false
-var gEngineOptions EngineOptions
+var gEngineOptions *EngineOptions
 var gDefaultScriptEngine progpAPI.ScriptEngine
 
 func GetScriptEngine() progpAPI.ScriptEngine {
@@ -200,10 +202,10 @@ func executeScript(ctx progpAPI.JsContext, scriptPath string) *progpAPI.JsErrorM
 	return ctx.ExecuteScript(scriptContent, scriptOrigin, scriptPath)
 }
 
-// Bootstrap initialize the engine and execute a startup script.
+// bootstrapWithOptions initialize the engine and execute a startup script.
 // If the script path is blank, then no script is executed.
 // In all case the engine is initialized.
-func Bootstrap(options EngineOptions) {
+func bootstrapWithOptions(options *EngineOptions) {
 	if gIsBootstrapped {
 		return
 	}

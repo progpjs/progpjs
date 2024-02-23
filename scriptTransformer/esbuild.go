@@ -21,7 +21,7 @@ func (m *ScriptCompilationError) Error() string {
 
 func CompileJavascriptFile(scriptPath string, scriptPrefix string) (string, string, error) {
 	if scriptPrefix == "" {
-		scriptPrefix = "import '@progp/core'"
+		scriptPrefix = "import '@progp/core'\nimport '@progp/core_nodejscompat'"
 	}
 	fileExt := path.Ext(scriptPath)
 
