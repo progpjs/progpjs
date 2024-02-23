@@ -253,9 +253,9 @@ func bootstrapWithOptions(options *EngineOptions) {
 
 var gSignalHandler progpAPI.ListenProgpSignalF
 
-func EmitProgpSignal(ctx progpAPI.JsContext, signal string) error {
+func EmitProgpSignal(ctx progpAPI.JsContext, signal string, data string) error {
 	if gSignalHandler != nil {
-		return gSignalHandler(ctx, signal)
+		return gSignalHandler(ctx, signal, data)
 	}
 
 	return nil

@@ -47,9 +47,9 @@ func AddSignalListener(listener progpAPI.ListenProgpSignalF) {
 	gSignalListeners = append(gSignalListeners, listener)
 }
 
-func onProgpJsSignal(ctx progpAPI.JsContext, signal string) error {
+func onProgpJsSignal(ctx progpAPI.JsContext, signal string, data string) error {
 	for _, listener := range gSignalListeners {
-		err := listener(ctx, signal)
+		err := listener(ctx, signal, data)
 		if err != nil {
 			return err
 		}
