@@ -3,6 +3,7 @@ package progpjs
 import (
 	"github.com/progpjs/progpAPI/v2"
 	"github.com/progpjs/progpAPI/v2/codegen"
+	"reflect"
 )
 
 type GenFCaller[T any] struct {
@@ -13,23 +14,27 @@ func (m *GenFCaller[T]) GetT() T {
 	return v
 }
 
-func GetFunctionCaller(functionTemplate any) any {
-	sign := codegen.GetFunctionSignature(functionTemplate)
+func GetFunctionCaller(defaultImpl any) any {
+	reflectI := reflect.TypeOf(defaultImpl)
+	myMethod, isFound := reflectI.MethodByName("Call")
+
+	if !isFound {
+		panic("Interface must have a methode named 'Call'")
+	}
+
+	myMethodT := myMethod.Type
+
+	// Must always be added to the code generator.
+	codegen.AddFunctionCallerToGenerate(myMethodT)
+
+	sign := codegen.GetFunctionSignature(myMethodT)
 
 	// Get the final function.
 	res := progpAPI.GetFunctionCaller(sign)
-	if res != nil {
-		return res
+	//
+	if res == nil {
+		return defaultImpl
 	}
 
-	// The function doesn't exist?
-	// Then will be added to the function to generate.
-	//
-	codegen.AddFunctionCallerToGenerate(functionTemplate)
-
-	// Return the function used as template.
-	// This function must contains a call to progpAPI.DynamicFunctionCaller
-	// in order to be able to use dynamic mode.
-	//
-	return functionTemplate
+	return res
 }
