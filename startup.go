@@ -218,7 +218,7 @@ func bootstrapWithOptions(options *EngineOptions) {
 	// Will create dynamic function, or update the compiled code if env variable PROGPV8_DIR
 	// points to the source dir of "scriptEngine.progpV8".
 	//
-	ExportExposedFunctions(options.ProgpV8EngineProjectDir)
+	GenerateSourceCode(options.ProgpV8EngineProjectDir)
 
 	// Configure things for the core functionalities.
 	configureCore()
@@ -285,7 +285,7 @@ func ExecuteScriptFile(scriptPath string, securityGroup string, mustDebug bool, 
 	return ctx.ExecuteScriptFile(scriptPath, onCompiledSuccess)
 }
 
-func ExportExposedFunctions(progpV8EngineProjectDir string) {
+func GenerateSourceCode(progpV8EngineProjectDir string) {
 	// If the directory is provided then build an optimized version of the sources
 	// which avoid using reflection. It's much more fast!
 	//
