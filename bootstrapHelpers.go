@@ -40,7 +40,7 @@ func DefaultBootstrapOptions() *EngineOptions {
 	return options
 }
 
-func Bootstrap(scriptPath string, enableDebug bool, options *EngineOptions) BootstrapExitAwaiterF {
+func Bootstrap(scriptPath string, enableDebug bool, options *EngineOptions, installMods func()) BootstrapExitAwaiterF {
 	if options == nil {
 		options = DefaultBootstrapOptions()
 	}
@@ -53,7 +53,7 @@ func Bootstrap(scriptPath string, enableDebug bool, options *EngineOptions) Boot
 	}
 
 	// bootstrapWithOptions the engine.
-	bootstrapWithOptions(options)
+	bootstrapWithOptions(options, installMods)
 
 	// Execute our script.
 	// Here we execute the script in a parallel thread in order to don't block the caller.

@@ -81,13 +81,13 @@ func resolveScriptEngine(engineName string, pluginsDir string) progpAPI.ScriptEn
 		return gScriptEngine
 	}
 
-	gScriptEngine = progpAPI.GetScriptEngine(engineName)
+	gScriptEngine = progpAPI.UseScriptEngine(engineName)
 	if gScriptEngine != nil {
 		return gScriptEngine
 	}
 
 	loadEngineFromPlugins(pluginsDir)
-	gScriptEngine = progpAPI.GetScriptEngine(engineName)
+	gScriptEngine = progpAPI.UseScriptEngine(engineName)
 	if gScriptEngine != nil {
 		return gScriptEngine
 	}
@@ -206,19 +206,13 @@ func executeScript(ctx progpAPI.JsContext, scriptPath string, onCompiledSuccess 
 // bootstrapWithOptions initialize the engine and execute a startup script.
 // If the script path is blank, then no script is executed.
 // In all case the engine is initialized.
-func bootstrapWithOptions(options *EngineOptions) {
+func bootstrapWithOptions(options *EngineOptions, installMods func()) {
 	if gIsBootstrapped {
 		return
 	}
 
 	gIsBootstrapped = true
 	gEngineOptions = options
-
-	// Get the function registry and declare all the function to the script engine implementation.
-	// Will create dynamic function, or update the compiled code if env variable PROGPV8_DIR
-	// points to the source dir of "scriptEngine.progpV8".
-	//
-	GenerateSourceCode(options.ProgpV8EngineProjectDir)
 
 	// Configure things for the core functionalities.
 	configureCore()
@@ -230,6 +224,15 @@ func bootstrapWithOptions(options *EngineOptions) {
 	//
 	scriptEngine := resolveScriptEngine(options.ScriptEngineName, options.PluginsDir)
 	gDefaultScriptEngine = scriptEngine
+
+	// Warning the engine must be defined before calling.
+	installMods()
+
+	// Get the function registry and declare all the function to the script engine implementation.
+	// Will create dynamic function, or update the compiled code if env variable PROGPV8_DIR
+	// points to the source dir of "scriptEngine.progpV8".
+	//
+	GenerateSourceCode(options.ProgpV8EngineProjectDir)
 
 	if options.OnRuntimeError != nil {
 		scriptEngine.SetRuntimeErrorHandler(options.OnRuntimeError)
