@@ -171,13 +171,14 @@ type JavascriptModuleProviderF func(resourcePath string) (content string, loader
 var gIsBootstrapped = false
 var gEngineOptions *EngineOptions
 var gDefaultScriptEngine progpAPI.ScriptEngine
+var gEnableDebugger bool
 
 func GetScriptEngine() progpAPI.ScriptEngine {
 	return gDefaultScriptEngine
 }
 
 func compileScript(scriptPath string) (string, string, error) {
-	return scriptTransformer.CompileJavascriptFile(scriptPath, gEngineOptions.ScriptAutomaticHeader)
+	return scriptTransformer.CompileJavascriptFile(scriptPath, gEngineOptions.ScriptAutomaticHeader, gEnableDebugger)
 }
 
 func executeScript(ctx progpAPI.JsContext, scriptPath string, onCompiledSuccess func()) *progpAPI.JsErrorMessage {
@@ -213,6 +214,7 @@ func bootstrapWithOptions(options *EngineOptions, installMods func()) {
 
 	gIsBootstrapped = true
 	gEngineOptions = options
+	gEnableDebugger = options.MustDebug
 
 	// Configure things for the core functionalities.
 	configureCore()

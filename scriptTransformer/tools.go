@@ -49,23 +49,35 @@ func SearchNodeModulesDir(searchFrom string) string {
 	return SearchNodeModulesDir(parent)
 }
 
-func GetCompileCacheDir(searchFrom string) string {
-	nmd := SearchNodeModulesDir(searchFrom)
+var gCacheDir string
+var gIsCacheDirCreate bool
 
-	if nmd == "" {
-		nmd = path.Join(searchFrom, "node_modules")
+func GetCacheDir(searchFrom string, createDir bool) string {
+	if gCacheDir == "" {
+		nmd := SearchNodeModulesDir(searchFrom)
+
+		const cacheDirName = ".progpjs"
+
+		if nmd != "" {
+			gCacheDir = path.Join(path.Dir(nmd), cacheDirName)
+		} else {
+			gCacheDir = path.Join(searchFrom, cacheDirName)
+		}
 	}
 
-	// Warning: don't store on node_modules since Chrome Inspector automatically
-	// exclude debugging file inside this directory.
-	//
-	tmpDir := os.TempDir()
-	//dirPath := path.Join(path.Dir(nmd), ".progpCache", "esbuildCache")
-	dirPath := path.Join(tmpDir, "progpCache", "esbuildCache")
+	if createDir {
+		if !gIsCacheDirCreate {
+			gIsCacheDirCreate = true
+			_ = os.MkdirAll(gCacheDir, os.ModePerm)
+		}
 
-	_ = os.MkdirAll(dirPath, os.ModePerm)
+	}
 
-	return dirPath
+	return gCacheDir
+}
+
+func GetCompileCacheDir(searchFrom string, createDir bool) string {
+	return path.Join(GetCacheDir(searchFrom, createDir), "build")
 }
 
 // SearchModuleInNodeModules returns the module path inside node_modules directory.

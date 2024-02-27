@@ -19,14 +19,15 @@ func (m *ScriptCompilationError) Error() string {
 	return m.message
 }
 
-func CompileJavascriptFile(scriptPath string, scriptPrefix string) (string, string, error) {
+func CompileJavascriptFile(scriptPath string, scriptPrefix string, saveCompiledFiles bool) (string, string, error) {
 	if scriptPrefix == "" {
 		scriptPrefix = "import '@progp/core'\nimport '@progp/core_nodejscompat'"
 	}
+
 	fileExt := path.Ext(scriptPath)
 
 	if slices.Contains(gAllowsScriptExtensions, fileExt) {
-		compileResult, err := bundleJavascriptScriptEntryPoint(scriptPath, scriptPrefix, true)
+		compileResult, err := bundleJavascriptScriptEntryPoint(scriptPath, scriptPrefix, true, saveCompiledFiles)
 		if err != nil {
 			return "", "", err
 		}
@@ -38,8 +39,12 @@ func CompileJavascriptFile(scriptPath string, scriptPrefix string) (string, stri
 	return "", "", nil
 }
 
-func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix string, forceRebuild bool) (*TransformedScript, error) {
-	outputDir := path.Join(GetCompileCacheDir(path.Dir(scriptSourcePath)), calcMd5(scriptSourcePath))
+func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix string, forceRebuild bool, saveCompiledFiles bool) (*TransformedScript, error) {
+	outputDir := ""
+
+	if saveCompiledFiles {
+		outputDir = path.Join(GetCompileCacheDir(path.Dir(scriptSourcePath), true), calcMd5(scriptSourcePath))
+	}
 
 	compiledScriptBasePath := path.Join(outputDir, "stdin")
 
@@ -49,14 +54,14 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 
 		asBytes, err := os.ReadFile(jsPath)
 		if err != nil {
-			return bundleJavascriptScriptEntryPoint(scriptSourcePath, scriptPrefix, true)
+			return bundleJavascriptScriptEntryPoint(scriptSourcePath, scriptPrefix, true, saveCompiledFiles)
 		}
 		//
 		jsContent := string(asBytes)
 
 		asBytes, err = os.ReadFile(mapPath)
 		if err != nil {
-			return bundleJavascriptScriptEntryPoint(scriptSourcePath, scriptPrefix, true)
+			return bundleJavascriptScriptEntryPoint(scriptSourcePath, scriptPrefix, true, saveCompiledFiles)
 		}
 		//
 		mapContent := string(asBytes)
@@ -73,12 +78,6 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 	baseDir, entryPoint := path.Split(scriptSourcePath)
 
 	buildOptions := api.BuildOptions{
-		// Allow to replace react officiel package by progp implementation.
-		// Note: commented du a matter in esbuild doing that is never requested if not found.
-		/*Alias: map[string]string{
-			"react": "@progp/react",
-		},*/
-
 		// Will allow forcing loading of the progp lib when starring.
 		// Is required because this lib declares special common stuff like console and setTimeout.
 		//
@@ -120,7 +119,7 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 		Format: api.FormatESModule,
 
 		// Required for sourcemap.
-		Write: true,
+		Write: saveCompiledFiles,
 
 		// Make one uniq file will all dependencies.
 		Bundle: true,
@@ -141,10 +140,12 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 		Metafile: false,
 
 		Plugins: getPlugins(),
+	}
 
-		Sourcemap:      api.SourceMapLinked,
-		SourcesContent: api.SourcesContentInclude,
-		SourceRoot:     outputDir,
+	if saveCompiledFiles {
+		buildOptions.Sourcemap = api.SourceMapLinked
+		buildOptions.SourcesContent = api.SourcesContentInclude
+		buildOptions.SourceRoot = outputDir
 	}
 
 	result := api.Build(buildOptions)
@@ -185,15 +186,25 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 	callResult := TransformedScript{}
 	callResult.OutputDir = outputDir
 
-	_ = os.WriteFile(path.Join(outputDir, "meta.json"), []byte(result.Metafile), os.ModePerm)
+	if saveCompiledFiles {
+		_ = os.WriteFile(path.Join(outputDir, "meta.json"), []byte(result.Metafile), os.ModePerm)
+	}
 
-	for _, output := range result.OutputFiles {
-		if strings.HasSuffix(output.Path, ".js") {
-			callResult.CompiledScriptPath = output.Path
-			callResult.CompiledScriptContent = string(output.Contents)
-		} else if strings.HasSuffix(output.Path, ".map") {
-			callResult.SourceMapScriptPath = output.Path
-			callResult.SourceMapFileContent = string(output.Contents)
+	if saveCompiledFiles {
+		for _, output := range result.OutputFiles {
+			if strings.HasSuffix(output.Path, ".js") {
+				callResult.CompiledScriptPath = output.Path
+				callResult.CompiledScriptContent = string(output.Contents)
+			} else if strings.HasSuffix(output.Path, ".map") {
+				callResult.SourceMapScriptPath = output.Path
+				callResult.SourceMapFileContent = string(output.Contents)
+			}
+		}
+	} else {
+		for _, output := range result.OutputFiles {
+			if output.Path == "<stdout>" {
+				callResult.CompiledScriptContent = string(output.Contents)
+			}
 		}
 	}
 

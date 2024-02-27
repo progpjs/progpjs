@@ -19,6 +19,7 @@ package progpjs
 import (
 	"embed"
 	"github.com/progpjs/progpAPI/v2"
+	"github.com/progpjs/progpjs/v2/scriptTransformer"
 )
 
 func GetFunctionRegistry() *progpAPI.FunctionRegistry {
@@ -56,4 +57,8 @@ func onProgpJsSignal(ctx progpAPI.JsContext, signal string, data string) error {
 	}
 
 	return nil
+}
+
+func GetCacheDir(searchFrom string, createDir bool) string {
+	return scriptTransformer.GetCacheDir(searchFrom, createDir)
 }
