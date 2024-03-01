@@ -49,9 +49,6 @@ func SearchNodeModulesDir(searchFrom string) string {
 	return SearchNodeModulesDir(parent)
 }
 
-var gCacheDir string
-var gIsCacheDirCreate bool
-
 func GetCacheDir(searchFrom string, createDir bool) string {
 	if gCacheDir == "" {
 		nmd := SearchNodeModulesDir(searchFrom)
@@ -122,3 +119,6 @@ func WalkNodeModules(startDir string, handler func(dirPath string) bool) {
 
 	WalkNodeModules(parentDir, handler)
 }
+
+var gCacheDir string
+var gIsCacheDirCreate bool

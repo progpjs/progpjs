@@ -1,6 +1,7 @@
 package scriptTransformer
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
 	"os"
@@ -19,7 +20,7 @@ func (m *ScriptCompilationError) Error() string {
 	return m.message
 }
 
-func CompileJavascriptFile(scriptPath string, scriptPrefix string, saveCompiledFiles bool) (string, string, error) {
+func CompileJavascriptFile(scriptPath string, scriptPrefix string, saveCompiledFiles bool) (string, string, string, error) {
 	if scriptPrefix == "" {
 		scriptPrefix = "import '@progp/core'\nimport '@progp/core_nodejscompat'"
 	}
@@ -29,14 +30,14 @@ func CompileJavascriptFile(scriptPath string, scriptPrefix string, saveCompiledF
 	if slices.Contains(gAllowsScriptExtensions, fileExt) {
 		compileResult, err := bundleJavascriptScriptEntryPoint(scriptPath, scriptPrefix, true, saveCompiledFiles)
 		if err != nil {
-			return "", "", err
+			return "", "", "", err
 		}
 
-		return compileResult.CompiledScriptContent, compileResult.CompiledScriptPath, nil
+		return compileResult.CompiledScriptContent, compileResult.CompiledScriptPath, compileResult.SourceMapFileContent, nil
 	}
 
 	_, _ = fmt.Fprintf(os.Stdout, "unsupported script type: %s", fileExt)
-	return "", "", nil
+	return "", "", "", nil
 }
 
 func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix string, forceRebuild bool, saveCompiledFiles bool) (*TransformedScript, error) {
@@ -146,6 +147,9 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 		buildOptions.Sourcemap = api.SourceMapLinked
 		buildOptions.SourcesContent = api.SourcesContentInclude
 		buildOptions.SourceRoot = outputDir
+	} else {
+		buildOptions.Sourcemap = api.SourceMapInline
+		buildOptions.SourcesContent = api.SourcesContentExclude
 	}
 
 	result := api.Build(buildOptions)
@@ -197,13 +201,25 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 				callResult.CompiledScriptContent = string(output.Contents)
 			} else if strings.HasSuffix(output.Path, ".map") {
 				callResult.SourceMapScriptPath = output.Path
-				callResult.SourceMapFileContent = string(output.Contents)
+				//callResult.SourceMapFileContent = string(output.Contents)
 			}
 		}
 	} else {
 		for _, output := range result.OutputFiles {
 			if output.Path == "<stdout>" {
-				callResult.CompiledScriptContent = string(output.Contents)
+				asString := string(output.Contents)
+				idx := strings.LastIndex(asString, `//# sourceMappingURL=data:application/json;base64,`)
+				sb64 := asString[idx+50:]
+				asString = asString[0:idx]
+				callResult.CompiledScriptContent = asString
+
+				sourceMap, err := base64.URLEncoding.DecodeString(sb64)
+
+				if err != nil {
+					return nil, err
+				}
+
+				callResult.SourceMapFileContent = string(sourceMap)
 			}
 		}
 	}

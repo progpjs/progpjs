@@ -177,7 +177,7 @@ func GetScriptEngine() progpAPI.ScriptEngine {
 	return gDefaultScriptEngine
 }
 
-func compileScript(scriptPath string) (string, string, error) {
+func compileScript(scriptPath string) (string, string, string, error) {
 	return scriptTransformer.CompileJavascriptFile(scriptPath, gEngineOptions.ScriptAutomaticHeader, gEnableDebugger)
 }
 
@@ -185,7 +185,7 @@ func executeScript(ctx progpAPI.JsContext, scriptPath string, onCompiledSuccess 
 	// Transform typescript file (and others supported types) as plain javascript.
 	// It big a big file with all the requirements.
 	//
-	scriptContent, scriptOrigin, err := compileScript(scriptPath)
+	scriptContent, scriptOrigin, sourceMap, err := compileScript(scriptPath)
 
 	// If ko, the error message has already been displayed.
 	// Then we only have to exit.
@@ -201,7 +201,7 @@ func executeScript(ctx progpAPI.JsContext, scriptPath string, onCompiledSuccess 
 	}
 
 	onCompiledSuccess()
-	return ctx.ExecuteScript(scriptContent, scriptOrigin, scriptPath)
+	return ctx.ExecuteScript(scriptContent, scriptOrigin, scriptPath, sourceMap)
 }
 
 // bootstrapWithOptions initialize the engine and execute a startup script.
@@ -321,12 +321,17 @@ func configureCore() {
 	progpAPI.SetErrorTranslator(func(message *progpAPI.JsErrorMessage) {
 		executingScript := message.ScriptPath
 
-		sourceMapFileContent, err := os.ReadFile(executingScript + ".map")
-		if err != nil {
-			return
+		sourceMap := []byte(message.SourceMap)
+
+		if len(sourceMap) == 0 {
+			txt, err := os.ReadFile(executingScript + ".map")
+			if err != nil {
+				return
+			}
+			sourceMap = txt
 		}
 
-		reader, err := sourcemap.Parse("", sourceMapFileContent)
+		reader, err := sourcemap.Parse("", sourceMap)
 		if err != nil {
 			return
 		}
