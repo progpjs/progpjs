@@ -27,7 +27,7 @@ func GetFunctionCaller(defaultImpl any) any {
 	// Must always be added to the code generator.
 	codegen.AddFunctionCallerToGenerate(myMethodT)
 
-	sign := codegen.GetFunctionSignature(myMethodT)
+	sign := codegen.GetFunctionSignatureWithoutReturn(myMethodT)
 
 	// Get the final function.
 	res := progpAPI.GetFunctionCaller(sign)
