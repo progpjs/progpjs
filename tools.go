@@ -20,6 +20,7 @@ import (
 	"embed"
 	"github.com/progpjs/progpAPI/v2"
 	"github.com/progpjs/progpjs/v2/scriptTransformer"
+	"log"
 )
 
 func GetFunctionRegistry() *progpAPI.FunctionRegistry {
@@ -29,6 +30,7 @@ func GetFunctionRegistry() *progpAPI.FunctionRegistry {
 func ReadEmbeddedFile(fs embed.FS, innerPath string) string {
 	b, err := fs.ReadFile(innerPath)
 	if err != nil {
+		log.Print("Error loading embedded resource ", innerPath)
 		return ""
 	}
 	return string(b)
