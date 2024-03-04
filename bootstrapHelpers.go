@@ -37,6 +37,11 @@ func DefaultBootstrapOptions() *EngineOptions {
 	// Optional, allows selecting the engine when more than one is available.
 	options.ScriptEngineName = "progpV8"
 
+	options.OnScriptCompilationError = func(scriptPath string, err error) bool {
+		print(err.Error())
+		return false
+	}
+
 	return options
 }
 
