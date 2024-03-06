@@ -2,6 +2,7 @@ package scriptTransformer
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
 	"os"
@@ -208,15 +209,17 @@ func bundleJavascriptScriptEntryPoint(scriptSourcePath string, scriptPrefix stri
 		for _, output := range result.OutputFiles {
 			if output.Path == "<stdout>" {
 				asString := string(output.Contents)
-				idx := strings.LastIndex(asString, `//# sourceMappingURL=data:application/json;base64,`)
-				sb64 := asString[idx+50:]
+
+				prefix := `//# sourceMappingURL=data:application/json;base64,`
+				idx := strings.LastIndex(asString, prefix)
+				sb64 := asString[idx+len(prefix):]
 				asString = asString[0:idx]
 				callResult.CompiledScriptContent = asString
 
-				sourceMap, err := base64.URLEncoding.DecodeString(sb64)
+				sourceMap, err := base64.StdEncoding.DecodeString(sb64)
 
 				if err != nil {
-					return nil, err
+					return nil, errors.Join(errors.New("error when decoding script source map"), err)
 				}
 
 				callResult.SourceMapFileContent = string(sourceMap)
